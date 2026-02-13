@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const Interview = require('../models/Interview.js');
 const User = require('../models/User.js');
+const OpenAI = require('openai');
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY || 'mock-key', // Use mock key if not provided to avoid crash on init
+});
 
 // === USER ROUTES ===
 
@@ -69,6 +74,35 @@ router.put('/interviews/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating interview:', error);
     res.status(400).json({ error: 'Bad Request' });
+  }
+});
+
+// === AI ROUTES ===
+
+// POST: AI Autocomplete
+router.post('/autocomplete', async (req, res) => {
+  try {
+    const { prompt } = req.body;
+
+    if (!prompt) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      // Mock response if no API key
+      const mockResponse = `[MOCK AI] Completed: ${prompt} ... (Simulated completion)`;
+      return res.status(200).json({ completion: mockResponse });
+    }
+
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-3.5-turbo",
+    });
+
+    res.status(200).json({ completion: completion.choices[0].message.content });
+  } catch (error) {
+    console.error("Error in AI autocomplete:", error);
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
