@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstraVox — Sign Up</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+      color: #e0e0e0;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.06);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .logo {
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #a78bfa, #6366f1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #9ca3af;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: #c4b5fd;
+      margin-bottom: 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: #f1f1f1;
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
+    }
+
+    input::placeholder { color: #6b7280; }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #6366f1);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+    }
+
+    .btn:active { transform: translateY(0); }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      text-align: center;
+      display: none;
+    }
+
+    .message.success {
+      display: block;
+      background: rgba(34, 197, 94, 0.15);
+      color: #4ade80;
+      border: 1px solid rgba(34, 197, 94, 0.25);
+    }
+
+    .message.error {
+      display: block;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.25);
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .footer a {
+      color: #a78bfa;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .footer a:hover { text-decoration: underline; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card { animation: fadeIn 0.5s ease-out; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <div class="logo">AstraVox</div>
+    <p class="subtitle">Create your account to get started</p>
+
+    <form id="signupForm">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="e.g. johndoe" required>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="••••••••" minlength="6" required>
+      </div>
+
+      <button type="submit" class="btn" id="submitBtn">Sign Up</button>
+    </form>
+
+    <div class="message" id="message"></div>
+
+    <div class="footer">
+      Already have an account? <a href="#">Log in</a>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('signupForm');
+    const msg  = document.getElementById('message');
+    const btn  = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      msg.className = 'message';
+      msg.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+
+      const data = {
+        username: document.getElementById('username').value.trim(),
+        email:    document.getElementById('email').value.trim(),
+        password: document.getElementById('password').value,
+      };
+
+      try {
+        const res = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+
+        const result = await res.json();
+
+        if (res.ok) {
+          msg.textContent = '✅ Account created successfully!';
+          msg.className = 'message success';
+          form.reset();
+        } else {
+          msg.textContent = result.error || 'Sign-up failed. Please try again.';
+          msg.className = 'message error';
+        }
+      } catch (err) {
+        msg.textContent = 'Network error. Is the server running?';
+        msg.className = 'message error';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign Up';
+      }
+    });
+  </script>
+
+</body>
+</html>

@@ -1,6 +1,7 @@
 const express = require('express');
+const path = require('path');
 const mongoose = require('mongoose');
-const routes = require('./routes/routes'); // ✅ We're importing our route file
+const routes = require('./routes/routes');
 require('dotenv').config();
 
 const app = express();
@@ -8,9 +9,15 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Use the routes with /api prefix
+// Routes
 app.use('/api', routes);
+
+// Redirect root to sign-up page
+app.get('/', (req, res) => {
+  res.redirect('/signup.html');
+});
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URL)
