@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AstraVox — Feedback Report</title>
+  <meta name="description" content="Detailed AI feedback on your interview response">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .feedback-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .overall-score {
+      text-align: center;
+      padding: 28px;
+    }
+
+    .overall-score .big-score {
+      font-size: 64px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .overall-score .score-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .question-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .question-card .q-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .question-card .q-text {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .response-card {
+      margin-top: 12px;
+      padding: 16px;
+      background: var(--bg-primary);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .meta-item strong {
+      color: var(--text-secondary);
+    }
+
+    @media (max-width: 768px) {
+      .feedback-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <nav class="navbar">
+    <div class="navbar-logo">AstraVox <span>AI Interview Reviewer</span></div>
+    <button class="mobile-menu-btn" onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+    <ul class="navbar-nav">
+      <li><a href="index.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+      <li><a href="interview.html"><span class="nav-icon">🎤</span> New Interview</a></li>
+      <li><a href="progress.html"><span class="nav-icon">📈</span> Progress</a></li>
+      <li><a href="analytics.html"><span class="nav-icon">📉</span> Analytics</a></li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1>Feedback Report</h1>
+      <p>Detailed analysis of your interview response</p>
+    </div>
+
+    <div id="feedbackContent">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No feedback to show</h3>
+        <p>Complete an interview to see your feedback report</p>
+        <a href="interview.html" class="btn btn-primary">Start Interview</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function getScoreColor(score) {
+      if (score >= 80) return 'var(--success)';
+      if (score >= 60) return 'var(--accent)';
+      if (score >= 40) return 'var(--warning)';
+      return 'var(--danger)';
+    }
+
+    function loadFeedback() {
+      const params = new URLSearchParams(window.location.search);
+      const idx = parseInt(params.get('id'));
+      const interviews = JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+
+      if (isNaN(idx) || idx < 0 || idx >= interviews.length) return;
+
+      const interview = interviews[idx];
+      const s = interview.scores;
+      const container = document.getElementById('feedbackContent');
+
+      container.innerHTML = `
+        <!-- Question & Response -->
+        <div class="question-card">
+          <div class="q-label">Interview Question</div>
+          <div class="q-text">${escapeHtml(interview.question)}</div>
+          <div class="response-card">${escapeHtml(interview.response)}</div>
+          <div class="meta-row">
+            <div class="meta-item">Category: <strong>${interview.category}</strong></div>
+            <div class="meta-item">Type: <strong>${interview.type}</strong></div>
+            <div class="meta-item">Date: <strong>${new Date(interview.createdAt).toLocaleDateString()}</strong></div>
+          </div>
+        </div>
+
+        <!-- Scores Section -->
+        <div class="feedback-grid">
+          <!-- Overall Score -->
+          <div class="card overall-score">
+            <div class="big-score" style="color: ${getScoreColor(s.overall)}">${s.overall}%</div>
+            <div class="score-subtitle">Overall Score</div>
+            <div style="margin-top: 20px;">
+              <div class="score-row">
+                <span class="score-label">Confidence</span>
+                <span class="score-bar"><div class="progress-bar"><div class="progress-fill" style="width:${s.confidence}%; background:${getScoreColor(s.confidence)}"></div></div></span>
+                <span class="score-value" style="color:${getScoreColor(s.confidence)}">${s.confidence}</span>
+              </div>
+              <div class="score-row">
+                <span class="score-label">Clarity</span>
+                <span class="score-bar"><div class="progress-bar"><div class="progress-fill" style="width:${s.clarity}%; background:${getScoreColor(s.clarity)}"></div></div></span>
+                <span class="score-value" style="color:${getScoreColor(s.clarity)}">${s.clarity}</span>
+              </div>
+              <div class="score-row">
+                <span class="score-label">Communication</span>
+                <span class="score-bar"><div class="progress-bar"><div class="progress-fill" style="width:${s.communication}%; background:${getScoreColor(s.communication)}"></div></div></span>
+                <span class="score-value" style="color:${getScoreColor(s.communication)}">${s.communication}</span>
+              </div>
+              <div class="score-row">
+                <span class="score-label">Technical</span>
+                <span class="score-bar"><div class="progress-bar"><div class="progress-fill" style="width:${s.technical}%; background:${getScoreColor(s.technical)}"></div></div></span>
+                <span class="score-value" style="color:${getScoreColor(s.technical)}">${s.technical}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Stats -->
+          <div>
+            <div class="card" style="margin-bottom: 16px;">
+              <h3 style="font-size:14px; margin-bottom:14px; color:var(--text-muted);">Quick Stats</h3>
+              <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <div class="stat-card" style="flex:1; min-width: 100px; border:none; padding:12px;">
+                  <div class="stat-label">Filler Words</div>
+                  <div class="stat-value" style="font-size:22px; color: ${interview.fillerWords > 5 ? 'var(--danger)' : 'var(--success)'}">${interview.fillerWords}</div>
+                </div>
+                <div class="stat-card" style="flex:1; min-width: 100px; border:none; padding:12px;">
+                  <div class="stat-label">Speaking Pace</div>
+                  <div class="stat-value" style="font-size:22px;">${interview.speakingPace}</div>
+                </div>
+                <div class="stat-card" style="flex:1; min-width: 100px; border:none; padding:12px;">
+                  <div class="stat-label">Word Count</div>
+                  <div class="stat-value" style="font-size:22px;">${interview.response.split(/\s+/).length}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Strengths, Weaknesses, Tips -->
+        <div class="feedback-grid" style="grid-template-columns: 1fr 1fr 1fr; margin-top: 20px;">
+          <div class="card">
+            <h3 style="font-size:15px; margin-bottom:12px; color:var(--success);">✓ Strengths</h3>
+            <ul class="feedback-list strengths">
+              ${interview.strengths.map(s => '<li>' + s + '</li>').join('')}
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px; margin-bottom:12px; color:var(--danger);">✗ Areas to Improve</h3>
+            <ul class="feedback-list weaknesses">
+              ${interview.weaknesses.map(w => '<li>' + w + '</li>').join('')}
+            </ul>
+          </div>
+          <div class="card">
+            <h3 style="font-size:15px; margin-bottom:12px; color:var(--accent);">→ Tips</h3>
+            <ul class="feedback-list tips">
+              ${interview.tips.map(t => '<li>' + t + '</li>').join('')}
+            </ul>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="margin-top: 24px; display: flex; gap: 12px;">
+          <a href="interview.html" class="btn btn-primary">Practice Again</a>
+          <a href="index.html" class="btn btn-secondary">Back to Dashboard</a>
+          <button class="btn btn-danger" onclick="deleteInterview(${idx})">Delete This Session</button>
+        </div>
+      `;
+    }
+
+    function deleteInterview(idx) {
+      if (!confirm('Are you sure you want to delete this interview session?')) return;
+      const interviews = JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+      interviews.splice(idx, 1);
+      localStorage.setItem('astravox_interviews', JSON.stringify(interviews));
+      window.location.href = 'index.html';
+    }
+
+    loadFeedback();
+  </script>
+</body>
+
+</html>

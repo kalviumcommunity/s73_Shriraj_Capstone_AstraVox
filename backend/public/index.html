@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraVox — Dashboard</title>
+    <meta name="description"
+        content="AstraVox AI Interview Reviewer dashboard - track your interview practice sessions">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-logo">AstraVox <span>AI Interview Reviewer</span></div>
+        <button class="mobile-menu-btn"
+            onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+        <ul class="navbar-nav">
+            <li><a href="index.html" class="active"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="interview.html"><span class="nav-icon">🎤</span> New Interview</a></li>
+            <li><a href="progress.html"><span class="nav-icon">📈</span> Progress</a></li>
+            <li><a href="analytics.html"><span class="nav-icon">📉</span> Analytics</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Dashboard</h1>
+            <p>Overview of your interview practice sessions</p>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="grid grid-4" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-label">Total Sessions</div>
+                <div class="stat-value" id="totalSessions">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Average Score</div>
+                <div class="stat-value" id="avgScore">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Best Category</div>
+                <div class="stat-value" id="bestCategory" style="font-size:18px;">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Last Practice</div>
+                <div class="stat-value" id="lastPractice" style="font-size:16px;">--</div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="margin: 28px 0 20px; display: flex; gap: 12px;">
+            <a href="interview.html" class="btn btn-primary">+ New Interview</a>
+            <a href="progress.html" class="btn btn-secondary">View Progress</a>
+        </div>
+
+        <!-- Recent Interviews -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Interviews</h3>
+                <span id="interviewCount" style="font-size: 13px; color: var(--text-muted);"></span>
+            </div>
+            <div id="interviewList"></div>
+        </div>
+    </main>
+
+    <script>
+        // Data helper - localStorage
+        function getInterviews() {
+            return JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function getScoreColor(score) {
+            if (score >= 80) return 'var(--success)';
+            if (score >= 60) return 'var(--accent)';
+            if (score >= 40) return 'var(--warning)';
+            return 'var(--danger)';
+        }
+
+        function loadDashboard() {
+            const interviews = getInterviews();
+            const total = interviews.length;
+
+            // Update stats
+            document.getElementById('totalSessions').textContent = total;
+
+            if (total > 0) {
+                const avgOverall = Math.round(interviews.reduce((s, i) => s + i.scores.overall, 0) / total);
+                document.getElementById('avgScore').textContent = avgOverall + '%';
+                document.getElementById('avgScore').style.color = getScoreColor(avgOverall);
+
+                // Best category
+                const cats = { confidence: 0, clarity: 0, communication: 0, technical: 0 };
+                interviews.forEach(i => {
+                    cats.confidence += i.scores.confidence;
+                    cats.clarity += i.scores.clarity;
+                    cats.communication += i.scores.communication;
+                    cats.technical += i.scores.technical;
+                });
+                const bestCat = Object.entries(cats).sort((a, b) => b[1] - a[1])[0][0];
+                document.getElementById('bestCategory').textContent = bestCat.charAt(0).toUpperCase() + bestCat.slice(1);
+
+                // Last practice
+                const lastDate = new Date(interviews[0].createdAt);
+                const now = new Date();
+                const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+                document.getElementById('lastPractice').textContent = diffDays === 0 ? 'Today' : diffDays + ' day' + (diffDays > 1 ? 's' : '') + ' ago';
+            }
+
+            // Interview count
+            document.getElementById('interviewCount').textContent = total + ' session' + (total !== 1 ? 's' : '');
+
+            // Render interview list
+            const listEl = document.getElementById('interviewList');
+
+            if (total === 0) {
+                listEl.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <h3>No interviews yet</h3>
+            <p>Start practicing by recording your first interview response</p>
+            <a href="interview.html" class="btn btn-primary">Start Practice</a>
+          </div>
+        `;
+                return;
+            }
+
+            // Show up to 10 recent interviews
+            const recent = interviews.slice(0, 10);
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>Question</th><th>Category</th><th>Score</th><th>Date</th><th>Action</th>';
+            html += '</tr></thead><tbody>';
+
+            recent.forEach((interview, idx) => {
+                const question = interview.question.length > 50
+                    ? interview.question.substring(0, 50) + '...'
+                    : interview.question;
+                const scoreColor = getScoreColor(interview.scores.overall);
+                const catBadge = {
+                    behavioral: 'badge-blue',
+                    technical: 'badge-yellow',
+                    hr: 'badge-green',
+                    general: 'badge-blue'
+                }[interview.category] || 'badge-blue';
+
+                html += `<tr>
+          <td>${question}</td>
+          <td><span class="badge ${catBadge}">${interview.category}</span></td>
+          <td style="color:${scoreColor}; font-weight:600;">${interview.scores.overall}%</td>
+          <td style="color:var(--text-muted)">${formatDate(interview.createdAt)}</td>
+          <td>
+            <a href="feedback.html?id=${idx}" class="btn btn-sm btn-secondary">View</a>
+          </td>
+        </tr>`;
+            });
+
+            html += '</tbody></table>';
+            listEl.innerHTML = html;
+        }
+
+        loadDashboard();
+    </script>
+</body>
+
+</html>

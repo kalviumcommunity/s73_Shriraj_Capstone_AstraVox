@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AstraVox — Sign Up</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
     body {
       font-family: 'Inter', sans-serif;
@@ -78,7 +85,9 @@
       box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.25);
     }
 
-    input::placeholder { color: #6b7280; }
+    input::placeholder {
+      color: #6b7280;
+    }
 
     .btn {
       width: 100%;
@@ -100,7 +109,9 @@
       box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
     }
 
-    .btn:active { transform: translateY(0); }
+    .btn:active {
+      transform: translateY(0);
+    }
 
     .btn:disabled {
       opacity: 0.6;
@@ -144,16 +155,28 @@
       font-weight: 500;
     }
 
-    .footer a:hover { text-decoration: underline; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .footer a:hover {
+      text-decoration: underline;
     }
 
-    .card { animation: fadeIn 0.5s ease-out; }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card {
+      animation: fadeIn 0.5s ease-out;
+    }
   </style>
 </head>
+
 <body>
 
   <div class="card">
@@ -188,8 +211,8 @@
 
   <script>
     const form = document.getElementById('signupForm');
-    const msg  = document.getElementById('message');
-    const btn  = document.getElementById('submitBtn');
+    const msg = document.getElementById('message');
+    const btn = document.getElementById('submitBtn');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -200,7 +223,7 @@
 
       const data = {
         username: document.getElementById('username').value.trim(),
-        email:    document.getElementById('email').value.trim(),
+        email: document.getElementById('email').value.trim(),
         password: document.getElementById('password').value,
       };
 
@@ -214,9 +237,10 @@
         const result = await res.json();
 
         if (res.ok) {
-          msg.textContent = '✅ Account created successfully!';
+          msg.textContent = '✅ Account created! Redirecting to dashboard...';
           msg.className = 'message success';
           form.reset();
+          setTimeout(() => { window.location.href = 'index.html'; }, 1500);
         } else {
           msg.textContent = result.error || 'Sign-up failed. Please try again.';
           msg.className = 'message error';
@@ -232,4 +256,5 @@
   </script>
 
 </body>
+
 </html>

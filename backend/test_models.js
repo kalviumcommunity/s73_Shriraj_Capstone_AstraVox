@@ -17,15 +17,25 @@ async function testModels() {
         await newUser.save();
         console.log('User created:', newUser._id);
 
-        // Create an interview linked to the user
+        // Create an interview linked to the user (matching current schema)
         const newInterview = new Interview({
             user: newUser._id,
-            userName: newUser.username,
-            position: 'Developer',
-            responses: ['Answer 1', 'Answer 2'],
-            score: 85,
-            confidenceLevel: 'High',
-            feedback: 'Good job'
+            question: 'Tell me about a time you overcame a difficult challenge',
+            response: 'In my previous role, I was tasked with migrating our legacy system to a new platform. I analyzed the existing codebase, created a migration plan, and led the team through the process. As a result, we improved performance by 40%.',
+            category: 'behavioral',
+            type: 'text',
+            scores: {
+                confidence: 75,
+                clarity: 80,
+                communication: 72,
+                technical: 65,
+                overall: 73
+            },
+            strengths: ['Good use of STAR method', 'Quantifiable results mentioned'],
+            weaknesses: ['Could add more technical detail'],
+            tips: ['Practice expanding on technical aspects'],
+            fillerWords: 0,
+            speakingPace: 'normal'
         });
         await newInterview.save();
         console.log('Interview created:', newInterview._id);
