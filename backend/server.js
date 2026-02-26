@@ -1,29 +1,49 @@
 const express = require('express');
 const path = require('path');
-const mongoose = require('mongoose');
+const cors = require('cors');
+
+// Try MongoDB connection - app works without it
+let mongooseConnected = false;
+try {
+  const mongoose = require('mongoose');
+  require('dotenv').config();
+
+  if (process.env.MONGO_URL) {
+    mongoose.connect(process.env.MONGO_URL)
+      .then(() => {
+        console.log('MongoDB connected');
+        mongooseConnected = true;
+      })
+      .catch(err => console.log('MongoDB not available, using localStorage mode'));
+  } else {
+    console.log('No MONGO_URL set, running in localStorage-only mode');
+  }
+} catch (e) {
+  console.log('Running without MongoDB');
+}
+
 const routes = require('./routes/routes');
-require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(express.json());
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Routes
+// API Routes
 app.use('/api', routes);
 
-// Redirect root to sign-up page
+// Serve uploads folder
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// Root goes to dashboard
 app.get('/', (req, res) => {
-  res.redirect('/signup.html');
+  res.redirect('/index.html');
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGO_URL)
-  .then(() => console.log('MongoDB Connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
-
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`AstraVox server running on http://localhost:${PORT}`);
 });

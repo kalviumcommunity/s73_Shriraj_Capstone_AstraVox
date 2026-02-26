@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraVox — Analytics</title>
+    <meta name="description" content="Detailed analytics of your interview practice performance">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .chart-card {
+            position: relative;
+            height: 300px;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .skill-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 14px;
+        }
+
+        .skill-item:last-child {
+            border-bottom: none;
+        }
+
+        @media (max-width: 768px) {
+            .analytics-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-logo">AstraVox <span>AI Interview Reviewer</span></div>
+        <button class="mobile-menu-btn"
+            onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+        <ul class="navbar-nav">
+            <li><a href="index.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="interview.html"><span class="nav-icon">🎤</span> New Interview</a></li>
+            <li><a href="progress.html"><span class="nav-icon">📈</span> Progress</a></li>
+            <li><a href="analytics.html" class="active"><span class="nav-icon">📉</span> Analytics</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Analytics</h1>
+            <p>In-depth breakdown of your interview performance</p>
+        </div>
+
+        <!-- Top Stats -->
+        <div class="grid grid-4" style="margin-bottom: 20px;">
+            <div class="stat-card">
+                <div class="stat-label">Avg Confidence</div>
+                <div class="stat-value" id="avgConfidence">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Clarity</div>
+                <div class="stat-value" id="avgClarity">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Communication</div>
+                <div class="stat-value" id="avgComm">--</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Avg Technical</div>
+                <div class="stat-value" id="avgTech">--</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="analytics-grid">
+            <!-- Radar Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Skills Overview</h3>
+                </div>
+                <div class="chart-card">
+                    <canvas id="radarChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Bar Chart -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Category Comparison</h3>
+                </div>
+                <div class="chart-card">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Row -->
+        <div class="analytics-grid">
+            <!-- Filler Words / Pace Analysis -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Speaking Analysis</h3>
+                </div>
+                <div id="speakingStats">
+                    <div class="skill-item">
+                        <span>Average Filler Words</span>
+                        <strong id="avgFillers" style="color: var(--text-primary)">--</strong>
+                    </div>
+                    <div class="skill-item">
+                        <span>Most Common Pace</span>
+                        <strong id="commonPace" style="color: var(--text-primary)">--</strong>
+                    </div>
+                    <div class="skill-item">
+                        <span>Average Response Length</span>
+                        <strong id="avgLength" style="color: var(--text-primary)">--</strong>
+                    </div>
+                    <div class="skill-item">
+                        <span>Total Practice Sessions</span>
+                        <strong id="totalCount" style="color: var(--accent)">0</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Strengths/Weaknesses Summary  -->
+            <div class="card">
+                <div class="card-header">
+                    <h3>Most Common Feedback</h3>
+                </div>
+                <div id="commonFeedback">
+                    <div class="empty-state" style="padding: 20px;">
+                        <p>Complete interviews to see patterns</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function getInterviews() {
+            return JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+        }
+
+        function getScoreColor(score) {
+            if (score >= 80) return 'var(--success)';
+            if (score >= 60) return 'var(--accent)';
+            if (score >= 40) return 'var(--warning)';
+            return 'var(--danger)';
+        }
+
+        function loadAnalytics() {
+            const interviews = getInterviews();
+            const total = interviews.length;
+
+            if (total === 0) {
+                // Show empty states
+                return;
+            }
+
+            // Calculate averages
+            const avg = {
+                confidence: Math.round(interviews.reduce((s, i) => s + i.scores.confidence, 0) / total),
+                clarity: Math.round(interviews.reduce((s, i) => s + i.scores.clarity, 0) / total),
+                communication: Math.round(interviews.reduce((s, i) => s + i.scores.communication, 0) / total),
+                technical: Math.round(interviews.reduce((s, i) => s + i.scores.technical, 0) / total)
+            };
+
+            document.getElementById('avgConfidence').textContent = avg.confidence + '%';
+            document.getElementById('avgConfidence').style.color = getScoreColor(avg.confidence);
+            document.getElementById('avgClarity').textContent = avg.clarity + '%';
+            document.getElementById('avgClarity').style.color = getScoreColor(avg.clarity);
+            document.getElementById('avgComm').textContent = avg.communication + '%';
+            document.getElementById('avgComm').style.color = getScoreColor(avg.communication);
+            document.getElementById('avgTech').textContent = avg.technical + '%';
+            document.getElementById('avgTech').style.color = getScoreColor(avg.technical);
+
+            // Radar Chart
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Confidence', 'Clarity', 'Communication', 'Technical'],
+                    datasets: [{
+                        label: 'Average Scores',
+                        data: [avg.confidence, avg.clarity, avg.communication, avg.technical],
+                        backgroundColor: 'rgba(79, 140, 255, 0.2)',
+                        borderColor: '#4f8cff',
+                        pointBackgroundColor: '#4f8cff',
+                        pointBorderColor: '#4f8cff',
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            beginAtZero: true,
+                            max: 100,
+                            grid: { color: 'rgba(42, 45, 58, 0.5)' },
+                            angleLines: { color: 'rgba(42, 45, 58, 0.5)' },
+                            pointLabels: { color: '#9398a7', font: { size: 12 } },
+                            ticks: { color: '#5d6272', backdropColor: 'transparent' }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#9398a7' } }
+                    }
+                }
+            });
+
+            // Bar chart - category comparison
+            const categories = {};
+            interviews.forEach(i => {
+                const cat = i.category || 'general';
+                if (!categories[cat]) categories[cat] = { total: 0, count: 0 };
+                categories[cat].total += i.scores.overall;
+                categories[cat].count++;
+            });
+
+            const catLabels = Object.keys(categories).map(c => c.charAt(0).toUpperCase() + c.slice(1));
+            const catAvgs = Object.values(categories).map(c => Math.round(c.total / c.count));
+            const catColors = ['#4f8cff', '#34d399', '#fbbf24', '#a78bfa'];
+
+            const barCtx = document.getElementById('barChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: catLabels,
+                    datasets: [{
+                        label: 'Average Score',
+                        data: catAvgs,
+                        backgroundColor: catColors.slice(0, catLabels.length),
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0, max: 100,
+                            grid: { color: 'rgba(42, 45, 58, 0.5)' },
+                            ticks: { color: '#5d6272' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#9398a7' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Speaking stats
+            const avgFillers = Math.round(interviews.reduce((s, i) => s + (i.fillerWords || 0), 0) / total * 10) / 10;
+            document.getElementById('avgFillers').textContent = avgFillers;
+            document.getElementById('avgFillers').style.color = avgFillers > 3 ? 'var(--danger)' : 'var(--success)';
+
+            const paces = {};
+            interviews.forEach(i => { paces[i.speakingPace] = (paces[i.speakingPace] || 0) + 1; });
+            const commonPace = Object.entries(paces).sort((a, b) => b[1] - a[1])[0];
+            document.getElementById('commonPace').textContent = commonPace ? commonPace[0] : '--';
+
+            const avgWords = Math.round(interviews.reduce((s, i) => s + i.response.split(/\s+/).length, 0) / total);
+            document.getElementById('avgLength').textContent = avgWords + ' words';
+            document.getElementById('totalCount').textContent = total;
+
+            // Common feedback
+            const strengthCount = {};
+            const weaknessCount = {};
+            interviews.forEach(i => {
+                (i.strengths || []).forEach(s => { strengthCount[s] = (strengthCount[s] || 0) + 1; });
+                (i.weaknesses || []).forEach(w => { weaknessCount[w] = (weaknessCount[w] || 0) + 1; });
+            });
+
+            const topStrengths = Object.entries(strengthCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+            const topWeaknesses = Object.entries(weaknessCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+
+            let feedbackHtml = '';
+            if (topStrengths.length > 0) {
+                feedbackHtml += '<h4 style="font-size:13px; color:var(--success); margin-bottom:8px;">Top Strengths</h4>';
+                topStrengths.forEach(([text, count]) => {
+                    feedbackHtml += `<div class="skill-item"><span style="color:var(--text-secondary)">${text}</span><span class="badge badge-green">${count}x</span></div>`;
+                });
+            }
+            if (topWeaknesses.length > 0) {
+                feedbackHtml += '<h4 style="font-size:13px; color:var(--danger); margin: 16px 0 8px;">Common Weaknesses</h4>';
+                topWeaknesses.forEach(([text, count]) => {
+                    feedbackHtml += `<div class="skill-item"><span style="color:var(--text-secondary)">${text}</span><span class="badge badge-red">${count}x</span></div>`;
+                });
+            }
+
+            if (feedbackHtml) {
+                document.getElementById('commonFeedback').innerHTML = feedbackHtml;
+            }
+        }
+
+        loadAnalytics();
+    </script>
+</body>
+
+</html>

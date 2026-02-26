@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraVox — New Interview</title>
+    <meta name="description" content="Practice your interview skills with AstraVox AI reviewer">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .question-presets {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .preset-btn {
+            padding: 5px 12px;
+            background: var(--bg-hover);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Inter', Arial, sans-serif;
+        }
+
+        .preset-btn:hover {
+            background: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        .record-area {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            padding: 20px;
+            background: var(--bg-primary);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 16px;
+        }
+
+        .record-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--danger);
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .record-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .record-btn .inner-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--danger);
+        }
+
+        .record-btn.recording .inner-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+        }
+
+        .upload-area {
+            padding: 16px;
+            background: var(--bg-primary);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 16px;
+        }
+
+        .upload-area:hover {
+            border-color: var(--accent);
+        }
+
+        .submit-section {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .analyzing-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 17, 23, 0.85);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+        }
+
+        .analyzing-overlay h3 {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .analyzing-overlay p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-logo">AstraVox <span>AI Interview Reviewer</span></div>
+        <button class="mobile-menu-btn"
+            onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+        <ul class="navbar-nav">
+            <li><a href="index.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="interview.html" class="active"><span class="nav-icon">🎤</span> New Interview</a></li>
+            <li><a href="progress.html"><span class="nav-icon">📈</span> Progress</a></li>
+            <li><a href="analytics.html"><span class="nav-icon">📉</span> Analytics</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>New Interview Practice</h1>
+            <p>Choose a question, record or type your response, and get AI feedback</p>
+        </div>
+
+        <form id="interviewForm">
+            <!-- Category -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 16px; font-size: 15px;">Interview Setup</h3>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select id="category" class="form-input">
+                            <option value="behavioral">Behavioral</option>
+                            <option value="technical">Technical</option>
+                            <option value="hr">HR / General</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="responseType">Response Type</label>
+                        <select id="responseType" class="form-input">
+                            <option value="text">Text Response</option>
+                            <option value="audio">Audio Recording</option>
+                            <option value="video">Video Upload</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 12px; font-size: 15px;">Interview Question</h3>
+                <div class="form-group">
+                    <label for="question">Type your question or select a preset</label>
+                    <input type="text" id="question" class="form-input"
+                        placeholder="e.g. Tell me about a time you faced a challenge..." required>
+                </div>
+                <div class="question-presets" id="presets"></div>
+            </div>
+
+            <!-- Response -->
+            <div class="card" style="margin-bottom: 20px;">
+                <h3 style="margin-bottom: 12px; font-size: 15px;">Your Response</h3>
+
+                <!-- Text input -->
+                <div id="textSection">
+                    <div class="form-group">
+                        <label for="response">Type your answer below</label>
+                        <textarea id="response" placeholder="Start typing your interview response here..." rows="8"
+                            required></textarea>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-muted);">
+                        Word count: <span id="wordCount">0</span> | Characters: <span id="charCount">0</span>
+                    </div>
+                </div>
+
+                <!-- Audio recording section -->
+                <div id="audioSection" style="display:none;">
+                    <div class="record-area">
+                        <button type="button" class="record-btn" id="recordBtn" onclick="toggleRecording()">
+                            <div class="inner-dot"></div>
+                        </button>
+                        <div>
+                            <div id="recordStatus" style="font-size: 14px; font-weight: 500;">Click to start recording
+                            </div>
+                            <div id="recordTimer" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">
+                                00:00</div>
+                        </div>
+                    </div>
+                    <p style="font-size: 12px; color: var(--text-muted);">
+                        Note: Audio is simulated for demo — your spoken text will be converted to text for analysis.
+                        <br>After "recording", type what you said in the text box that appears.
+                    </p>
+                    <div id="audioTranscript" style="display:none; margin-top: 12px;">
+                        <div class="form-group">
+                            <label>Transcribed text (type what you said)</label>
+                            <textarea id="audioText" placeholder="Type what you said during the recording..."
+                                rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload section -->
+                <div id="uploadSection" style="display:none;">
+                    <div class="upload-area" onclick="document.getElementById('fileUpload').click()">
+                        <div style="font-size: 32px; margin-bottom: 8px;">📁</div>
+                        <p style="font-size: 14px; color: var(--text-secondary);">Click to upload a video/audio file</p>
+                        <p style="font-size: 12px; color: var(--text-muted);">MP4, WebM, MP3, WAV (max 50MB)</p>
+                        <input type="file" id="fileUpload" accept="video/*,audio/*" style="display:none"
+                            onchange="handleUpload(this)">
+                    </div>
+                    <div id="uploadInfo" style="display:none; margin-top: 12px;"></div>
+                    <div id="uploadTranscript" style="display:none; margin-top: 12px;">
+                        <div class="form-group">
+                            <label>Transcription (type what was said in the recording)</label>
+                            <textarea id="uploadText" placeholder="Type the content of your recording for analysis..."
+                                rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="submit-section">
+                <button type="submit" class="btn btn-primary" id="submitBtn">Analyze Response</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Clear</button>
+            </div>
+        </form>
+
+        <!-- Analyzing overlay -->
+        <div class="analyzing-overlay" id="analyzingOverlay" style="display:none;">
+            <div class="loading-spinner" style="width: 40px; height: 40px; border-width: 3px;"></div>
+            <h3>Analyzing your response...</h3>
+            <p>Our AI is evaluating your communication, confidence, and clarity</p>
+        </div>
+    </main>
+
+    <script>
+        // Preset questions by category
+        const presetQuestions = {
+            behavioral: [
+                'Tell me about a time you overcame a difficult challenge',
+                'Describe a situation where you had to work with a difficult team member',
+                'Give an example of a goal you reached and how you achieved it',
+                'Tell me about a time you failed and what you learned',
+                'Describe a situation where you showed leadership'
+            ],
+            technical: [
+                'Explain the difference between SQL and NoSQL databases',
+                'How would you design a URL shortening service?',
+                'What is the difference between REST and GraphQL?',
+                'Explain how a hash table works',
+                'Describe the MVC architecture pattern'
+            ],
+            hr: [
+                'Why do you want to work at this company?',
+                'Where do you see yourself in 5 years?',
+                'What are your greatest strengths and weaknesses?',
+                'Why should we hire you?',
+                'Tell me about yourself'
+            ]
+        };
+
+        const categorySelect = document.getElementById('category');
+        const typeSelect = document.getElementById('responseType');
+        const presetsDiv = document.getElementById('presets');
+        const questionInput = document.getElementById('question');
+        const responseArea = document.getElementById('response');
+        const wordCountEl = document.getElementById('wordCount');
+        const charCountEl = document.getElementById('charCount');
+
+        // Update presets when category changes
+        function updatePresets() {
+            const cat = categorySelect.value;
+            const questions = presetQuestions[cat] || presetQuestions.behavioral;
+            presetsDiv.innerHTML = questions.map(q =>
+                `<button type="button" class="preset-btn" onclick="selectPreset(this)">${q}</button>`
+            ).join('');
+        }
+
+        function selectPreset(btn) {
+            questionInput.value = btn.textContent;
+        }
+
+        categorySelect.addEventListener('change', updatePresets);
+        updatePresets();
+
+        // Response type switching
+        typeSelect.addEventListener('change', () => {
+            const type = typeSelect.value;
+            document.getElementById('textSection').style.display = type === 'text' ? 'block' : 'none';
+            document.getElementById('audioSection').style.display = type === 'audio' ? 'block' : 'none';
+            document.getElementById('uploadSection').style.display = type === 'video' ? 'block' : 'none';
+        });
+
+        // Word count
+        responseArea.addEventListener('input', () => {
+            const text = responseArea.value.trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            wordCountEl.textContent = words;
+            charCountEl.textContent = text.length;
+        });
+
+        // Recording simulation
+        let isRecording = false;
+        let recordTimer;
+        let recordSeconds = 0;
+
+        function toggleRecording() {
+            const btn = document.getElementById('recordBtn');
+            const status = document.getElementById('recordStatus');
+            const timer = document.getElementById('recordTimer');
+
+            if (!isRecording) {
+                isRecording = true;
+                btn.classList.add('recording');
+                status.textContent = 'Recording...';
+                status.style.color = 'var(--danger)';
+                recordSeconds = 0;
+                recordTimer = setInterval(() => {
+                    recordSeconds++;
+                    const mins = Math.floor(recordSeconds / 60).toString().padStart(2, '0');
+                    const secs = (recordSeconds % 60).toString().padStart(2, '0');
+                    timer.textContent = mins + ':' + secs;
+                }, 1000);
+            } else {
+                isRecording = false;
+                clearInterval(recordTimer);
+                btn.classList.remove('recording');
+                status.textContent = 'Recording stopped (' + document.getElementById('recordTimer').textContent + ')';
+                status.style.color = 'var(--success)';
+                document.getElementById('audioTranscript').style.display = 'block';
+            }
+        }
+
+        // File upload
+        function handleUpload(input) {
+            if (input.files.length > 0) {
+                const file = input.files[0];
+                const info = document.getElementById('uploadInfo');
+                info.style.display = 'block';
+                info.innerHTML = `
+          <div class="card" style="padding: 12px 16px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 24px;">📎</span>
+            <div>
+              <div style="font-size: 14px; font-weight: 500;">${file.name}</div>
+              <div style="font-size: 12px; color: var(--text-muted);">${(file.size / (1024 * 1024)).toFixed(2)} MB</div>
+            </div>
+          </div>
+        `;
+                document.getElementById('uploadTranscript').style.display = 'block';
+            }
+        }
+
+        // Form submit
+        document.getElementById('interviewForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const question = questionInput.value.trim();
+            const type = typeSelect.value;
+            let responseText = '';
+
+            if (type === 'text') {
+                responseText = responseArea.value.trim();
+            } else if (type === 'audio') {
+                responseText = document.getElementById('audioText').value.trim();
+            } else {
+                responseText = document.getElementById('uploadText').value.trim();
+            }
+
+            if (!question || !responseText) {
+                alert('Please fill in both the question and your response.');
+                return;
+            }
+
+            // Show analyzing overlay
+            document.getElementById('analyzingOverlay').style.display = 'flex';
+
+            // Call backend API for analysis
+            let analysis;
+            try {
+                const res = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        response: responseText,
+                        category: categorySelect.value
+                    })
+                });
+                analysis = await res.json();
+            } catch (err) {
+                // Fallback: client-side mock analysis
+                analysis = mockAnalysis(responseText);
+            }
+
+            // Build interview object
+            const interview = {
+                id: Date.now().toString(),
+                question: question,
+                response: responseText,
+                category: categorySelect.value,
+                type: type,
+                scores: analysis.scores,
+                strengths: analysis.strengths,
+                weaknesses: analysis.weaknesses,
+                tips: analysis.tips,
+                fillerWords: analysis.fillerWords,
+                speakingPace: analysis.speakingPace,
+                createdAt: new Date().toISOString()
+            };
+
+            // Save to localStorage
+            const interviews = JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+            interviews.unshift(interview);
+            localStorage.setItem('astravox_interviews', JSON.stringify(interviews));
+
+            // Simulate brief analysis delay
+            setTimeout(() => {
+                document.getElementById('analyzingOverlay').style.display = 'none';
+                window.location.href = 'feedback.html?id=0';
+            }, 1500);
+        });
+
+        // Client-side fallback analysis
+        function mockAnalysis(text) {
+            const words = text.split(/\s+/).length;
+            const fillers = ['um', 'uh', 'like', 'basically', 'actually'];
+            let fillerCount = 0;
+            fillers.forEach(f => {
+                const matches = text.toLowerCase().match(new RegExp('\\b' + f + '\\b', 'g'));
+                if (matches) fillerCount += matches.length;
+            });
+
+            return {
+                scores: {
+                    confidence: Math.round(55 + Math.random() * 35),
+                    clarity: Math.round(55 + Math.random() * 35),
+                    communication: Math.round(55 + Math.random() * 35),
+                    technical: Math.round(50 + Math.random() * 35),
+                    overall: Math.round(55 + Math.random() * 30)
+                },
+                strengths: ['Good response length', 'Clear language used'],
+                weaknesses: ['Could be more specific', 'Add examples to support points'],
+                tips: ['Practice the STAR method', 'Record and review yourself'],
+                fillerWords: fillerCount,
+                speakingPace: words > 100 ? 'fast' : 'normal'
+            };
+        }
+
+        function resetForm() {
+            document.getElementById('interviewForm').reset();
+            wordCountEl.textContent = '0';
+            charCountEl.textContent = '0';
+            updatePresets();
+        }
+    </script>
+</body>
+
+</html>

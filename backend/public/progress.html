@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AstraVox — Progress</title>
+    <meta name="description" content="Track your interview practice progress over time">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            height: 320px;
+            margin-bottom: 20px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar label {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            background: var(--bg-hover);
+            border-radius: 20px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .filter-btn.active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="navbar-logo">AstraVox <span>AI Interview Reviewer</span></div>
+        <button class="mobile-menu-btn"
+            onclick="document.querySelector('.navbar-nav').classList.toggle('open')">☰</button>
+        <ul class="navbar-nav">
+            <li><a href="index.html"><span class="nav-icon">📊</span> Dashboard</a></li>
+            <li><a href="interview.html"><span class="nav-icon">🎤</span> New Interview</a></li>
+            <li><a href="progress.html" class="active"><span class="nav-icon">📈</span> Progress</a></li>
+            <li><a href="analytics.html"><span class="nav-icon">📉</span> Analytics</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content">
+        <div class="page-header">
+            <h1>Progress Tracking</h1>
+            <p>See how your interview skills are improving over time</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <label>Filter by category:</label>
+            <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All</button>
+            <button class="filter-btn" data-filter="behavioral"
+                onclick="setFilter('behavioral', this)">Behavioral</button>
+            <button class="filter-btn" data-filter="technical" onclick="setFilter('technical', this)">Technical</button>
+            <button class="filter-btn" data-filter="hr" onclick="setFilter('hr', this)">HR</button>
+        </div>
+
+        <!-- Progress Chart -->
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header">
+                <h3>Score Trends</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="progressChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="grid grid-3" style="margin-bottom: 20px;">
+            <div class="stat-card" id="progressStat1">
+                <div class="stat-label">Score Improvement</div>
+                <div class="stat-value" id="improvement">--</div>
+                <div class="stat-sub" id="improvementSub"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Sessions This Week</div>
+                <div class="stat-value" id="weekSessions">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Highest Score</div>
+                <div class="stat-value" id="highestScore">--</div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="card">
+            <div class="card-header">
+                <h3>Session History</h3>
+            </div>
+            <div id="historyTable"></div>
+        </div>
+    </main>
+
+    <script>
+        let progressChart = null;
+        let currentFilter = 'all';
+
+        function getInterviews() {
+            return JSON.parse(localStorage.getItem('astravox_interviews') || '[]');
+        }
+
+        function setFilter(filter, btn) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadProgress();
+        }
+
+        function getScoreColor(score) {
+            if (score >= 80) return 'var(--success)';
+            if (score >= 60) return 'var(--accent)';
+            if (score >= 40) return 'var(--warning)';
+            return 'var(--danger)';
+        }
+
+        function loadProgress() {
+            let interviews = getInterviews();
+
+            if (currentFilter !== 'all') {
+                interviews = interviews.filter(i => i.category === currentFilter);
+            }
+
+            // Reverse for chronological order in chart
+            const chronological = [...interviews].reverse();
+
+            // Update chart
+            if (progressChart) progressChart.destroy();
+
+            const ctx = document.getElementById('progressChart').getContext('2d');
+
+            if (chronological.length === 0) {
+                document.getElementById('historyTable').innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📈</div>
+            <h3>No data yet</h3>
+            <p>Complete some interviews to see your progress</p>
+          </div>
+        `;
+                document.getElementById('improvement').textContent = '--';
+                document.getElementById('weekSessions').textContent = '0';
+                document.getElementById('highestScore').textContent = '--';
+                return;
+            }
+
+            const labels = chronological.map((_, i) => 'Session ' + (i + 1));
+
+            progressChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Overall',
+                            data: chronological.map(i => i.scores.overall),
+                            borderColor: '#4f8cff',
+                            backgroundColor: 'rgba(79,140,255,0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Confidence',
+                            data: chronological.map(i => i.scores.confidence),
+                            borderColor: '#34d399',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            borderDash: [4, 4]
+                        },
+                        {
+                            label: 'Clarity',
+                            data: chronological.map(i => i.scores.clarity),
+                            borderColor: '#fbbf24',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            borderDash: [4, 4]
+                        },
+                        {
+                            label: 'Communication',
+                            data: chronological.map(i => i.scores.communication),
+                            borderColor: '#a78bfa',
+                            tension: 0.3,
+                            pointRadius: 3,
+                            borderDash: [4, 4]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#9398a7', font: { size: 12 } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0, max: 100,
+                            grid: { color: 'rgba(42, 45, 58, 0.5)' },
+                            ticks: { color: '#5d6272' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#5d6272' }
+                        }
+                    }
+                }
+            });
+
+            // Summary stats
+            const first = chronological[0].scores.overall;
+            const last = chronological[chronological.length - 1].scores.overall;
+            const diff = last - first;
+            document.getElementById('improvement').textContent = (diff >= 0 ? '+' : '') + diff + '%';
+            document.getElementById('improvement').style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+            document.getElementById('improvementSub').textContent = 'from first to latest session';
+
+            const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+            const weekCount = interviews.filter(i => new Date(i.createdAt) > oneWeekAgo).length;
+            document.getElementById('weekSessions').textContent = weekCount;
+
+            const highest = Math.max(...interviews.map(i => i.scores.overall));
+            document.getElementById('highestScore').textContent = highest + '%';
+            document.getElementById('highestScore').style.color = getScoreColor(highest);
+
+            // History table
+            let html = '<table class="data-table"><thead><tr>';
+            html += '<th>#</th><th>Question</th><th>Category</th><th>Overall</th><th>Confidence</th><th>Clarity</th><th>Date</th><th></th>';
+            html += '</tr></thead><tbody>';
+
+            interviews.forEach((interview, idx) => {
+                const q = interview.question.length > 40 ? interview.question.substring(0, 40) + '...' : interview.question;
+                // Find the actual index in the full list
+                const allInterviews = getInterviews();
+                const realIdx = allInterviews.findIndex(i => i.id === interview.id || (i.createdAt === interview.createdAt && i.question === interview.question));
+                html += `<tr>
+          <td style="color:var(--text-muted)">${idx + 1}</td>
+          <td>${q}</td>
+          <td><span class="badge badge-blue">${interview.category}</span></td>
+          <td style="font-weight:600; color:${getScoreColor(interview.scores.overall)}">${interview.scores.overall}%</td>
+          <td style="color:var(--text-secondary)">${interview.scores.confidence}%</td>
+          <td style="color:var(--text-secondary)">${interview.scores.clarity}%</td>
+          <td style="color:var(--text-muted)">${new Date(interview.createdAt).toLocaleDateString()}</td>
+          <td><a href="feedback.html?id=${realIdx >= 0 ? realIdx : idx}" class="btn btn-sm btn-secondary">View</a></td>
+        </tr>`;
+            });
+
+            html += '</tbody></table>';
+            document.getElementById('historyTable').innerHTML = html;
+        }
+
+        loadProgress();
+    </script>
+</body>
+
+</html>
